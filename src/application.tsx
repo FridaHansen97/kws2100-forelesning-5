@@ -10,36 +10,34 @@ import { useGeographic } from "ol/proj.js";
 // see the reference code for lecture 3)
 // @ts-ignore
 import "ol/ol.css";
+import { Layer } from "ol/layer.js";
+import VectorLayer from "ol/layer/Vector.js";
 
 // By calling the "useGeographic" function in OpenLayers, we tell that we want coordinates to be in degrees
 //  instead of meters, which is the default. Without this `center: [10.6, 59.9]` brings us to "null island"
 useGeographic();
 
-// Here we create a Map object. Make sure you `import { Map } from "ol"`. Otherwise, the standard Javascript
-//  map data structure will be used
 const view = new View({ center: [10.9, 59.9], zoom: 12 });
-const map = new Map({
-  // The map will be centered on a position in longitude (x-coordinate, east) and latitude (y-coordinate, north),
-  //   with a certain zoom level
-  view: view,
-});
+const map = new Map({ view });
+const osmLayer = new TileLayer({ source: new OSM() });
 
-// A functional React component
+const kartverketLayer = new TileLayer();
+const bydelLayer = new VectorLayer();
+const skoleLayer = new VectorLayer();
+
 export function Application() {
-  // `useRef` bridges the gap between JavaScript functions that expect DOM objects and React components
   const mapRef = useRef<HTMLDivElement | null>(null);
-  // When we display the page, we want the OpenLayers map object to target the DOM object refererred to by the
-  // map React component
+
+  const [layers, setLayers] = useState<Layer[]>([osmLayer, kartverketLayer]);
+  useEffect(() => map.setLayers(layers), [layers]);
+
   useEffect(() => {
     map.setTarget(mapRef.current!);
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
-      view.animate({ center: [longitude, latitude] });
+      view.animate({ center: [longitude, latitude], zoom: 16 });
     });
   }, []);
-
-  const [layers, setLayers] = useState([new TileLayer({ source: new OSM() })]);
-  useEffect(() => map.setLayers(layers), [layers]);
 
   // This is the location (in React) where we want the map to be displayed
   return (
