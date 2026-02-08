@@ -17,10 +17,11 @@ useGeographic();
 
 // Here we create a Map object. Make sure you `import { Map } from "ol"`. Otherwise, the standard Javascript
 //  map data structure will be used
+const view = new View({ center: [10.9, 59.9], zoom: 12 });
 const map = new Map({
   // The map will be centered on a position in longitude (x-coordinate, east) and latitude (y-coordinate, north),
   //   with a certain zoom level
-  view: new View({ center: [10.9, 59.9], zoom: 12 }),
+  view: view,
 });
 
 // A functional React component
@@ -31,6 +32,10 @@ export function Application() {
   // map React component
   useEffect(() => {
     map.setTarget(mapRef.current!);
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const { latitude, longitude } = pos.coords;
+      view.animate({ center: [longitude, latitude] });
+    });
   }, []);
 
   const [layers, setLayers] = useState([new TileLayer({ source: new OSM() })]);
