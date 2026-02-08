@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Map, View } from "ol";
 import TileLayer from "ol/layer/Tile.js";
-import { OSM } from "ol/source.js";
+import { OSM, WMTS } from "ol/source.js";
 import { useGeographic } from "ol/proj.js";
 
 // Styling of OpenLayers components like zoom and pan controls.
@@ -12,6 +12,9 @@ import { useGeographic } from "ol/proj.js";
 import "ol/ol.css";
 import { Layer } from "ol/layer.js";
 import VectorLayer from "ol/layer/Vector.js";
+import { GeoJSON, WMTSCapabilities } from "ol/format.js";
+import { optionsFromCapabilities } from "ol/source/WMTS.js";
+import VectorSource from "ol/source/Vector.js";
 
 // By calling the "useGeographic" function in OpenLayers, we tell that we want coordinates to be in degrees
 //  instead of meters, which is the default. Without this `center: [10.6, 59.9]` brings us to "null island"
@@ -22,20 +25,45 @@ const map = new Map({ view });
 const osmLayer = new TileLayer({ source: new OSM() });
 
 const kartverketLayer = new TileLayer();
-const bydelLayer = new VectorLayer();
+fetch("https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml").then(
+  async (res) => {
+    const parser = new WMTSCapabilities();
+    const capabilities = parser.read(await res.text());
+    kartverketLayer.setSource(
+      new WMTS(
+        optionsFromCapabilities(capabilities, {
+          layer: "topo",
+          matrixSet: "webmercator",
+        })!,
+      )!,
+    );
+  },
+);
+
+const bydelLayer = new VectorLayer({
+  source: new VectorSource({
+    url: "/public/bydeler.geojson",
+    format: new GeoJSON(),
+  }),
+});
 const skoleLayer = new VectorLayer();
 
 export function Application() {
   const mapRef = useRef<HTMLDivElement | null>(null);
 
-  const [layers, setLayers] = useState<Layer[]>([osmLayer, kartverketLayer]);
+  const [layers, setLayers] = useState<Layer[]>([
+    osmLayer,
+    kartverketLayer,
+    bydelLayer,
+    skoleLayer,
+  ]);
   useEffect(() => map.setLayers(layers), [layers]);
 
   useEffect(() => {
     map.setTarget(mapRef.current!);
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
-      view.animate({ center: [longitude, latitude], zoom: 16 });
+      view.animate({ center: [longitude, latitude], zoom: 15 });
     });
   }, []);
 
