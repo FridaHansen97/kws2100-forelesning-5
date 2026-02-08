@@ -10,7 +10,7 @@ import { Layer } from "ol/layer.js";
 import { optionsFromCapabilities } from "ol/source/WMTS.js";
 import { WMTSCapabilities } from "ol/format.js";
 import { bydelLayer } from "../layers/bydelLayer.js";
-import VectorLayer from "ol/layer/Vector.js";
+import { skoleLayer } from "../layers/skoleLayer.js";
 
 useGeographic();
 
@@ -33,8 +33,6 @@ fetch("https://cache.kartverket.no/v1/wmts/1.0.0/WMTSCapabilities.xml").then(
     );
   },
 );
-
-const skoleLayer = new VectorLayer();
 
 export function Application() {
   const mapRef = useRef<HTMLDivElement | null>(null);
