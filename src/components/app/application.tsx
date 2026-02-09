@@ -10,7 +10,7 @@ import { Layer } from "ol/layer.js";
 import { optionsFromCapabilities } from "ol/source/WMTS.js";
 import { WMTSCapabilities } from "ol/format.js";
 import { bydelLayer } from "../layers/bydelLayer.js";
-import { skoleLayer } from "../layers/skoleLayer.js";
+import { activeSkoleStyle, skoleLayer } from "../layers/skoleLayer.js";
 
 useGeographic();
 
@@ -45,15 +45,27 @@ export function Application() {
   ]);
   useEffect(() => map.setLayers(layers), [layers]);
 
+  const [activeFeature, setActiveFeature] = useState<Feature | undefined>();
+  useEffect(() => {
+    activeFeature?.setStyle(activeSkoleStyle);
+    return () => {
+      activeFeature?.setStyle(undefined);
+    };
+  }, [activeFeature]);
+
   useEffect(() => {
     map.setTarget(mapRef.current!);
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude, longitude } = pos.coords;
       view.animate({ center: [longitude, latitude], zoom: 15 });
     });
+
+    map.on("pointermove", (e: MapBrowserEvent) => {
+      const features = map.getFeaturesAtPixel(e.pixel);
+      setActiveFeature(features[0] as Feature);
+    });
   }, []);
 
-  // This is the location (in React) where we want the map to be displayed
   return (
     <>
       <div ref={mapRef}></div>
